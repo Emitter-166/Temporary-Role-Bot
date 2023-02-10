@@ -60,7 +60,7 @@ client.once('ready', (client) => {
     setInterval(scan, 60_000, client, sequelize);
 })
 
-const scan = async (client: Client, sequelize: Sequelize) => {
+const scan = async (client: Client, sequelize: Sequelize): Promise<boolean> => {
     try{
         const usersModel = sequelize.model('users');
 
@@ -77,9 +77,11 @@ const scan = async (client: Client, sequelize: Sequelize) => {
             await removeRole(user.get("userId") as string, user.get('roleId') as string, client);
             await user.destroy()
         }
-    
+        
+        return true;
     }catch(err){
         console.log(err);
+        return false;
     }
 }
 

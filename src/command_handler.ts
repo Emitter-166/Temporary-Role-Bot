@@ -34,7 +34,8 @@ export const listen = (client: Client, sequelize: Sequelize) => {
 
                 const userId = args[1].replace(/[<@>]/g, "");
                 const roleId = args[2].replace(/[<@&>]/g, "");
-
+                console.log({roleId, userId});
+                
                 let time = Number(args[3]);
 
                 if (Number.isNaN(time)) {
@@ -46,15 +47,18 @@ export const listen = (client: Client, sequelize: Sequelize) => {
 
                 const [model, created] = await sequelize.model('users').findOrCreate({
                     where: {
-                        userId: msg.author.id,
-                        roleId: roleId,
-                        givenAt: Date.now(),
-                        duration: time
+                        userId: userId,
+                        roleId: roleId
+                     },
+                    defaults: {
+                        duration: time,
+                        givenAt: Date.now()
                     }
                 })
-
+                 
                 if (created) {
-
+                    console.log("created");
+                    
                     if (await giveRole(userId, roleId, client)) {
                         success(msg);
                     } else {
@@ -63,9 +67,10 @@ export const listen = (client: Client, sequelize: Sequelize) => {
                     }
 
                 } else {
-                    model.update({
-                        duratiton: model.get("duration") as number + time
-                    })
+                    console.log("not created");
+                    const updated = await model.increment('duration', {by: time});
+                    console.log(updated.dataValues);
+                    
                     success(msg)
                 }
         }
@@ -111,14 +116,16 @@ export const giveRole = async (userId: string, roleId: string, client: Client): 
 
 }
 
-export const removeRole = async (userId: string, roleId: string, client: Client) => {
+export const removeRole = async (userId: string, roleId: string, client: Client): Promise < boolean > => {
     try {
         const guild = await client.guilds.fetch(GUILD_ID);
         const member = await guild.members.fetch(userId);
 
         await member.roles.remove(roleId);
+        return true;
     } catch (err) {
         console.log(err);
+        return false;
     }
 
 }
