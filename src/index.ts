@@ -1,7 +1,7 @@
 import { Client, IntentsBitField} from 'discord.js';
 import * as path from 'path';
 import { BOOLEAN, CHAR, INTEGER, Sequelize } from 'sequelize';
-import { listen, removeRole } from './command_handler';
+import {giveRole, listen, removeRole} from './command_handler';
 
 require('dotenv').config({
     path: path.join(__dirname, ".env")
@@ -58,6 +58,10 @@ client.once('ready', (client) => {
     console.log("ready");
     listen(client, sequelize);
     setInterval(scan, 60_000, client, sequelize);
+
+    //test
+
+    // removeRole("671016674668838952", "1070724172117987448", client);
 })
 
 const scan = async (client: Client, sequelize: Sequelize): Promise<boolean> => {

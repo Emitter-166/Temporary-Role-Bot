@@ -59,7 +59,7 @@ export const listen = (client: Client, sequelize: Sequelize) => {
                 if (created) {
                     console.log("created");
                     
-                    if (await giveRole(userId, roleId, client)) {
+                    if (await giveRole(userId, roleId, client, Number(args[3]) )) {
                         success(msg);
                     } else {
                         wrongUsage('Unable to give role', msg);
@@ -103,13 +103,32 @@ export const success = async (msg: Message) => {
     }
 }
 
-export const giveRole = async (userId: string, roleId: string, client: Client): Promise < boolean > => {
+export const giveRole = async (userId: string, roleId: string, client: Client, time: number): Promise < boolean > => {
     try {
         const guild = await client.guilds.fetch(GUILD_ID);
         const member = await guild.members.fetch(userId);
 
         await member.roles.add(roleId);
+
+        const role = await guild.roles.fetch(roleId);
+
+        try{
+            const dm = await member.user.createDM();
+            const embed = new EmbedBuilder()
+                .setDescription(`Yay! You now have the awesome **@${role?.name}** role for ${time} whole hours! 🎉🎊 Let's have some fun! 🥳`);
+
+            if(role?.color)
+                embed.setColor(role?.color);
+           await dm.send({embeds: [embed]});
+
+        }catch (err){
+            console.log("unable to dm member: " + `userId: ${userId} user: ${member.user.username}#${member.user.discriminator}`)
+        }
+
+
+
         return true;
+
     } catch (err) {
         return false;
     }
@@ -122,6 +141,22 @@ export const removeRole = async (userId: string, roleId: string, client: Client)
         const member = await guild.members.fetch(userId);
 
         await member.roles.remove(roleId);
+
+        const role = await guild.roles.fetch(roleId);
+
+        try{
+            const dm = await member.user.createDM();
+            const embed = new EmbedBuilder()
+                .setDescription(`Oh no! Your **@${role?.name}** role is about to be taken away 😔🕒`);
+
+            if(role?.color)
+                embed.setColor(role?.color);
+            await dm.send({embeds: [embed]});
+
+        }catch (err){
+            console.log("unable to dm member: " + `userId: ${userId} user: ${member.user.username}#${member.user.discriminator}`)
+        }
+
         return true;
     } catch (err) {
         console.log(err);
