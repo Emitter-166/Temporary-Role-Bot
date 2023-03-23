@@ -3,7 +3,6 @@ import {
 } from "@discordjs/builders";
 import {
     Client,
-    GuildMember,
     Message,
     PermissionsBitField
 } from "discord.js";
@@ -18,7 +17,7 @@ import {
 export const listen = (client: Client, sequelize: Sequelize) => {
 
     client.on('messageCreate', async (msg) => {
-        if (!msg.member?.permissions.has(PermissionsBitField.Flags.Administrator)) return;
+        if (!msg.member ?.permissions.has(PermissionsBitField.Flags.Administrator)) return;
         if (!msg.content.startsWith('!')) return;
 
         const args = msg.content.split(" ");
@@ -26,17 +25,23 @@ export const listen = (client: Client, sequelize: Sequelize) => {
         const command = args[0];
 
         switch (command) {
-            case "!add-temp-role":
-                if (args.length !== 4) {
-                    wrongUsage('Usage: !add-temp-role userId roleId hours', msg);
+            case "!add-temp-rolee":
+                if (!(args.length >= 4)) {
+                    wrongUsage('Usage: !add-temp-role roleId hours userIds', msg);
                     return;
                 }
 
-                const userId = args[1].replace(/[<@>]/g, "");
-                const roleId = args[2].replace(/[<@&>]/g, "");
-                console.log({roleId, userId});
-                
-                let time = Number(args[3]);
+                let userIds = [];
+
+                for (let i = 0; i < args.length; i++) {
+                    if (i > 2) {
+                        userIds.push(args[i].replace(/[<@>]/g, ""))
+                    }
+                }
+
+                const roleId = args[1].replace(/[<@&>]/g, "");
+
+                let time = Number(args[2]);
 
                 if (Number.isNaN(time)) {
                     wrongUsage('time must be a number', msg);
@@ -45,34 +50,33 @@ export const listen = (client: Client, sequelize: Sequelize) => {
 
                 time *= ONE_UNIT;
 
-                const [model, created] = await sequelize.model('users').findOrCreate({
-                    where: {
-                        userId: userId,
-                        roleId: roleId
-                     },
-                    defaults: {
-                        duration: time,
-                        givenAt: Date.now()
-                    }
-                })
-                 
-                if (created) {
-                    console.log("created");
-                    
-                    if (await giveRole(userId, roleId, client, Number(args[3]) )) {
-                        success(msg);
-                    } else {
-                        wrongUsage('Unable to give role', msg);
-                        await model.destroy();
-                    }
+                for (let userId of userIds) {
 
-                } else {
-                    console.log("not created");
-                    const updated = await model.increment('duration', {by: time});
-                    console.log(updated.dataValues);
-                    
-                    success(msg)
+                    const [model, created] = await sequelize.model('users').findOrCreate({
+                        where: {
+                            userId: userId,
+                            roleId: roleId
+                        },
+                        defaults: {
+                            duration: time,
+                            givenAt: Date.now()
+                        }
+                    })
+
+                    if (created) {
+                        if (await giveRole(userId, roleId, client, Number(args[2]))) {} else {
+                            wrongUsage(`Unable to give role to ${userId}`, msg);
+                            await model.destroy();
+                        }
+
+                    } else {
+                        const updated = await model.increment('duration', {
+                            by: time
+                        });
+                    }
                 }
+
+                success(msg);
         }
     })
 }
@@ -112,16 +116,18 @@ export const giveRole = async (userId: string, roleId: string, client: Client, t
 
         const role = await guild.roles.fetch(roleId);
 
-        try{
+        try {
             const dm = await member.user.createDM();
             const embed = new EmbedBuilder()
                 .setDescription(`Yay! You now have the awesome **@${role?.name}** role for ${time} whole hours! 🎉🎊 Let's have some fun! 🥳`);
 
-            if(role?.color)
-                embed.setColor(role?.color);
-           await dm.send({embeds: [embed]});
+            if (role ?.color)
+                embed.setColor(role ?.color);
+            await dm.send({
+                embeds: [embed]
+            });
 
-        }catch (err){
+        } catch (err) {
             console.log("unable to dm member: " + `userId: ${userId} user: ${member.user.username}#${member.user.discriminator}`)
         }
 
@@ -144,16 +150,18 @@ export const removeRole = async (userId: string, roleId: string, client: Client)
 
         const role = await guild.roles.fetch(roleId);
 
-        try{
+        try {
             const dm = await member.user.createDM();
             const embed = new EmbedBuilder()
                 .setDescription(`Oh no! Your **@${role?.name}** role is about to be taken away 😔🕒`);
 
-            if(role?.color)
+            if (role ?.color)
                 embed.setColor(role?.color);
-            await dm.send({embeds: [embed]});
+            await dm.send({
+                embeds: [embed]
+            });
 
-        }catch (err){
+        } catch (err) {
             console.log("unable to dm member: " + `userId: ${userId} user: ${member.user.username}#${member.user.discriminator}`)
         }
 
