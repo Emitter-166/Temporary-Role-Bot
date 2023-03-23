@@ -25,7 +25,7 @@ export const listen = (client: Client, sequelize: Sequelize) => {
         const command = args[0];
 
         switch (command) {
-            case "!add-temp-rolee":
+            case "!add-temp-role":
                 if (!(args.length >= 4)) {
                     wrongUsage('Usage: !add-temp-role roleId hours userIds', msg);
                     return;
