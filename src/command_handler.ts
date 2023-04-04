@@ -17,7 +17,7 @@ import {
 export const listen = (client: Client, sequelize: Sequelize) => {
 
     client.on('messageCreate', async (msg) => {
-        if (!msg.member ?.permissions.has(PermissionsBitField.Flags.Administrator)) return;
+        if (!msg.member ?.permissions.has(PermissionsBitField.Flags.Administrator) || !msg.member?.roles.cache.has('1028735048473645148')) return;
         if (!msg.content.startsWith('!')) return;
 
         const args = msg.content.split(" ");
